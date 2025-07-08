@@ -1,0 +1,97 @@
+package com.example.bankcards.controller;
+
+import com.example.bankcards.dto.CardTransferRequest;
+import com.example.bankcards.dto.card.CardCreateRequest;
+import com.example.bankcards.dto.card.CardResponse;
+import com.example.bankcards.dto.card.CardStatusUpdateRequest;
+import com.example.bankcards.entity.Card;
+import com.example.bankcards.service.CardService;
+import com.example.bankcards.service.TransferService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import java.math.BigDecimal;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/cards")
+@RequiredArgsConstructor
+public class CardController {
+    private final CardService cardService;
+    private final TransferService transferService;
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping
+    public ResponseEntity<CardResponse> createCard(@RequestBody CardCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(cardService.create(request));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    public ResponseEntity<List<CardResponse>> getAllCards() {
+        return ResponseEntity.ok(cardService.getAll());
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/my")
+    public ResponseEntity<List<CardResponse>> getUserCards(Authentication auth) {
+        String username = auth.getName();
+        return ResponseEntity.ok(cardService.getByUsername(username));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<CardResponse> updateStatus(@PathVariable Long id, @RequestBody CardStatusUpdateRequest request) {
+        return ResponseEntity.ok(cardService.updateStatus(id, request.getStatus()));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteCard(@PathVariable Long id) {
+        cardService.delete(id);
+        return ResponseEntity.ok("Card with id " + id + " deleted");
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/{id}/balance")
+    public ResponseEntity<BigDecimal> getCardBalance(@PathVariable Long id, Authentication auth) {
+        String username = auth.getName();
+        return ResponseEntity.ok(cardService.getBalance(id, username));
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/transfer")
+    public ResponseEntity<String> transfer(@RequestBody CardTransferRequest request, Authentication auth) {
+        transferService.transfer(
+                request.getFromCardId(),
+                request.getToCardId(),
+                request.getAmount(),
+                auth.getName()
+        );
+        return ResponseEntity.ok().body("Transfer successful");
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/my/search")
+    public ResponseEntity<Page<CardResponse>> getUserCards(
+            Authentication auth,
+            @RequestParam(required = false) String number,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(cardService.getUserCards(auth.getName(), number, pageable));
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/{id}/block")
+    public ResponseEntity<CardResponse> requestBlockCard(@PathVariable Long id, Authentication auth) {
+        return ResponseEntity.ok(cardService.requestBlock(id, auth.getName()));
+    }
+}

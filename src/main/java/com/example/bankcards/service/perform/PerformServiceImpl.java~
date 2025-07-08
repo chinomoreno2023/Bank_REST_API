@@ -1,0 +1,39 @@
+package com.example.bankcards.service.process;
+
+import com.example.bankcards.entity.card.Card;
+import com.example.bankcards.entity.event.Event;
+import com.example.bankcards.service.card.CardChecker;
+import com.example.bankcards.service.process.producer.ProducerService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class ProcessServiceImpl implements ProcessService {
+    private final CardChecker cardChecker;
+    private final ProducerService producerService;
+
+    @Transactional
+    public void transfer(Long fromId, Long toId, BigDecimal amount, String username) {
+        if (fromId.equals(toId)) {
+            throw new IllegalArgumentException("You cannot transfer to the same card");
+        }
+
+        Card from = cardChecker.getOwnedCard(fromId, username);
+        Card to = cardChecker.getOwnedCard(toId, username);
+
+        cardChecker.ensureActive(from);
+        cardChecker.ensureActive(to);
+        cardChecker.ensureSufficientBalance(from, amount);
+
+        producerService.createEvent(
+                new Event(UUID.randomUUID().toString(),
+                        fromId,
+                        toId,
+                        amount)
+        );
+    }
+}

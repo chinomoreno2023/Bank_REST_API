@@ -1,0 +1,55 @@
+encryption:
+  keystore-path: keystore.jceks
+  keystore-password: ${ENCRYPTION_KEYSTORE_PASSWORD}
+  key-alias: ${ENCRYPTION_KEY_ALIAS}
+
+jwt:
+  secret: ${JWT_SECRET}
+
+server:
+  port: 8088
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/bank
+    username: postgres
+    password: xvnzcb135
+
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+      bootstrap-servers: localhost-1:9092,localhost-2:9094,localhost-3:9096
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      group-id: bank-events
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: "*"
+
+    producer:
+      bootstrap-servers: localhost-1:9092,localhost-2:9094,localhost-3:9096
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        delivery.timeout.ms: 120000
+        linger.ms: 0
+        request.timeout.ms: 30000
+        max.in.flight.requests.per.connection: 5
+        enable.idempotence: true
+      transaction-id-prefix: bank-service-${random.value}-
+
+  mvc:
+    cors:
+      allowed-origins: "*"
+      allowed-methods: GET,POST,PATCH,DELETE
+      allowed-headers: "*"

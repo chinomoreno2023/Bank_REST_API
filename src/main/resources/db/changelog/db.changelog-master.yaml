@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-tables
+      author: Ivan
+      changes:
+        - sqlFile:
+            path: ../migration/001-create-tables.sql
+            relativeToChangelogFile: true
+            endDelimiter: ;

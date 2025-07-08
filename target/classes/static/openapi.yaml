@@ -1,0 +1,1040 @@
+openapi: 3.1.1
+info:
+  title: Bank API
+  version: 1.0.0
+servers:
+  - url: https://localhost:8443
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '400':
+          description: Invalid input or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                passwordInvalid:
+                  value: { message: "Password: password must be between 8 and 50 characters" }
+                userExists:
+                  value: { message: "User already exists" }
+                emailRequired:
+                  value: { message: "Username: email is required" }
+                emailInvalid:
+                  value: { message: "Username: email is not valid" }
+                badFormat:
+                  value: { message: "Invalid request format. Please check your data and try again" }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Internal server error" }
+
+  /auth/login:
+    post:
+      summary: Login user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: User logged in
+          headers:
+            Set-Cookie:
+              description: Sets refresh-token cookie (HttpOnly, Secure, SameSite=Strict)
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenAuthResponse'
+        '400':
+          description: Invalid input or user is not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emailInvalid:
+                  value: { message: "Username: email is not valid" }
+                emailRequired:
+                  value: { message: "Username: email is required" }
+                passwordInvalid:
+                  value: { message: "Password: password must be between 8 and 50 characters" }
+                badFormat:
+                  value: { message: "Invalid request format. Please check your data and try again" }
+        '401':
+          description: Invalid password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Invalid password" }
+        '404':
+          description: Invalid username or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Invalid username or password" }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Internal server error" }
+
+  /auth/logout:
+    delete:
+      summary: Logout user
+      security:
+        - BearerAuth: [ ]
+        - RefreshTokenCookie: [ ]
+      tags: [ Authentication ]
+      responses:
+        '204':
+          description: User logged out
+          headers:
+            Set-Cookie:
+              description: Deletes refresh-token cookie
+              schema:
+                type: string
+        '400':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emptyCookie:
+                  value: { message: "Refresh token is required" }
+                badRequest:
+                  value: { message: "Invalid or expired refresh token" }
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Internal server error" }
+
+  /auth/refresh:
+    post:
+      summary: Refresh token
+      security:
+        - BearerAuth: [ ]
+        - refreshTokenCookie: [ ]
+      tags: [ Authentication ]
+      responses:
+        '200':
+          description: Access and refresh tokens updated
+          headers:
+            Set-Cookie:
+              description: Updates refresh-token cookie
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenAuthResponse'
+        '400':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emptyCookie:
+                  value: { message: "Refresh token is required" }
+                badRequest:
+                  value: { message: "Invalid or expired refresh token" }
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Internal server error" }
+
+  /auth/logout-from-all-devices:
+    delete:
+      summary: Logout user from all devices
+      security:
+        - BearerAuth: [ ]
+      tags: [ Authentication ]
+      responses:
+        '204':
+          description: User logged out from all devices
+          headers:
+            Set-Cookie:
+              description: Deletes refresh-token cookie
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Internal server error" }
+
+  /auth/logout-current:
+    delete:
+      summary: Logout current session
+      security:
+        - BearerAuth: [ ]
+      tags: [ Authentication ]
+      responses:
+        '204':
+          description: User logged out from current session
+          headers:
+            Set-Cookie:
+              description: Deletes refresh-token cookie
+              schema:
+                type: string
+        '400':
+          description: Missing or invalid session ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emptyHeader:
+                  value: { message: "Missing session ID header" }
+                sessionNotFound:
+                  value: { message: "Session not found" }
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Internal server error" }
+
+  /auth/logout-by-session/{sessionId}:
+    delete:
+      summary: Logout by session ID
+      security:
+        - BearerAuth: [ ]
+      tags: [ Authentication ]
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Session ID to logout
+      responses:
+        '200':
+          description: Logout by session ID successful
+          headers:
+            Set-Cookie:
+              description: Deletes refresh-token cookie
+              schema:
+                type: string
+        '400':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Session not found" }
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Internal server error" }
+
+  /auth/sessions:
+    get:
+      summary: Get user active sessions
+      security:
+        - BearerAuth: [ ]
+      tags: [ Authentication ]
+      responses:
+        '200':
+          description: List of active user sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                $ref: '#/components/schemas/SessionInfoDto'
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Internal server error" }
+
+  /cards/admin:
+    post:
+      summary: Create card
+      security:
+        - BearerAuth: [ ]
+      tags: [Cards (ADMIN)]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardCreateRequest'
+      responses:
+        '201':
+          description: Card created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                length:
+                  value: { message: "Number: card number must be between 16 and 20 digits" }
+                digitsOnly:
+                  value: { message: "Number: card number must contain only digits" }
+                exists:
+                  value: { message: "Card number already exists" }
+                expired:
+                  value: { message: "Expiration date: card expiration date must be in the future" }
+                badFormat:
+                  value: { message: "Invalid request format. Please check your data and try again" }
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+            $ref: '#/components/responses/AccessDenied'
+        '404':
+          description: User not found
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+                example: { message: "User not found" }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Internal server error" }
+
+    get:
+      summary: Get all cards
+      security:
+        - BearerAuth: [ ]
+      tags: [Cards (ADMIN)]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: size
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Page of all cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDtoPage'
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                decryptionError:
+                  value: { message: "Decryption error" }
+                internalError:
+                  value: { message: "Internal server error" }
+
+  /cards/my:
+    get:
+      summary: Get user cards
+      security:
+        - BearerAuth: [ ]
+      tags: [Cards (USER)]
+      responses:
+        '200':
+          description: List of user cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardDto'
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                decryptionError:
+                  value: { message: "Decryption error" }
+                internalError:
+                  value: { message: "Internal server error" }
+
+  /cards/admin/{id}/status:
+    patch:
+      summary: Update card status
+      security:
+        - BearerAuth: [ ]
+      tags: [Cards (ADMIN)]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CardStatusUpdateRequest'
+      responses:
+        '200':
+          description: Card status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                badFormat:
+                  value: { message: "Invalid request format. Please check your data and try again" }
+                status:
+                  value: { message: "Status is required" }
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "User not found" }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                decryptionError:
+                  value: { message: "Decryption error" }
+                internalError:
+                  value: { message: "Internal server error" }
+
+  /cards/admin/{id}:
+    delete:
+      summary: Delete card
+      security:
+        - BearerAuth: [ ]
+      tags: [Cards (ADMIN)]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Card was deleted
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Card not found" }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                decryptionError:
+                  value: { message: "Decryption error" }
+                internalError:
+                  value: { message: "Internal server error" }
+
+  /cards/{id}/balance:
+    get:
+      summary: Get card balance
+      security:
+        - BearerAuth: [ ]
+      tags: [Cards (USER)]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Card balance
+          content:
+            application/json:
+              schema:
+                type: number
+                format: double
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+          description: Card does not belong to user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Card does not belong to user" }
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Card not found" }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                decryptionError:
+                  value: { message: "Decryption error" }
+                internalError:
+                  value: { message: "Internal server error" }
+
+  /cards/my/search:
+    get:
+      summary: Search user cards
+      security:
+        - BearerAuth: [ ]
+      tags: [Cards (USER)]
+      parameters:
+        - name: number
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: size
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Page of user cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDtoPage'
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                decryptionError:
+                  value: { message: "Decryption error" }
+                internalError:
+                  value: { message: "Internal server error" }
+
+  /cards/{id}/block:
+    post:
+      summary: Request to block card
+      security:
+        - BearerAuth: [ ]
+      tags: [Cards (USER)]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Card was blocked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDto'
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+          description: Card does not belong to user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Card does not belong to user" }
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Card not found" }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                decryptionError:
+                  value: { message: "Decryption error" }
+                internalError:
+                  value: { message: "Internal server error" }
+
+  /transfer:
+    post:
+      summary: Transfer money
+      security:
+        - BearerAuth: [ ]
+      tags: [Cards (USER)]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '204':
+          description: Transfer successful
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              examples:
+                sameCard:
+                  value: { message: "You cannot transfer to the same card" }
+                operationType:
+                  value: { message: "Operation type is required" }
+                amount:
+                  value: { message: "Amount is required" }
+                badFormat:
+                  value: { message: "Invalid request format. Please check your data and try again" }
+                inactiveCard:
+                  value: { message: "Card is not active" }
+                insufficientBalance:
+                  value: { message: "Insufficient balance" }
+        '401':
+            $ref: '#/components/responses/InvalidAccessTokenFormat'
+        '403':
+            description: Card does not belong to user
+            content:
+              application/json:
+                example: { message: "Card does not belong to user" }
+        '404':
+            description: Card not found
+            content:
+              application/json:
+                example: { message: "Card not found" }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                kafkaInterrupted:
+                  summary: Kafka was interrupted
+                  value: { message: "Kafka producer was interrupted" }
+                kafkaFailed:
+                  summary: Kafka failed
+                  value: { message: "Kafka producer failed" }
+                generalError:
+                  summary: General error
+                  value: { message: "Internal server error" }
+                decryptionError:
+                  value: { message: "Decryption error" }  
+
+  /users:
+    get:
+      summary: Get all users
+      security:
+        - BearerAuth: [ ]
+      tags: [Users (ADMIN)]
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDto'
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'          
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '500':
+            description: Internal server error
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+                example: { message: "Internal server error" }
+
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      security:
+        - BearerAuth: [ ]
+      tags: [Users (ADMIN)]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'        
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              example: { message: "User not found" }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Internal server error" }
+
+    delete:
+      summary: Delete user
+      security:
+        - BearerAuth: [ ]
+      tags: [Users (ADMIN)]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: User was deleted
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'        
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              example: { message: "User not found" }
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { message: "Internal server error" }
+
+  /users/{id}/role:
+    patch:
+      summary: Update user role
+      security:
+        - BearerAuth: [ ]
+      tags: [Users (ADMIN)]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRoleRequest'
+      responses:
+        '200':
+          description: User role updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              examples:
+                badFormat:
+                  summary: Invalid request format
+                  value: { message: "Invalid request format. Please check your data and try again" }
+                role:
+                  summary: Role is required
+                  value: { message: "Role is required" }
+        '401':
+          $ref: '#/components/responses/InvalidAccessTokenFormat'          
+        '403':
+          $ref: '#/components/responses/AccessDenied'
+        '404':
+            description: User not found
+            content:
+              application/json:
+                example: { message: "User not found" }
+        '500':
+            description: Internal server error
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+                example: { message: "Internal server error" }
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    RefreshTokenCookie:
+      in: cookie
+      name: refresh-token
+      required: true
+      schema:
+        type: string
+      description: Refresh token stored in httpOnly cookie
+
+  responses:
+    AccessDenied:
+      description: Access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example: { status: 403, message: "Access Denied" }
+
+    InvalidAccessTokenFormat:
+      description: Invalid access token format
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example: { status: 401, message: "Invalid access token format" }
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        message:
+          type: string
+
+    AuthRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    TokenAuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+
+    RequestTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        role:
+          type: string
+          enum: [USER, ADMIN]
+
+    UpdateRoleRequest:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [USER, ADMIN]
+
+    CardCreateRequest:
+      type: object
+      properties:
+        userId:
+          type: integer
+        number:
+          type: string
+        validUntil:
+          type: string
+          format: date
+
+    CardStatusUpdateRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, BLOCKED, EXPIRED]
+
+    TransferRequest:
+      type: object
+      properties:
+        fromCardId:
+          type: integer
+        toCardId:
+          type: integer
+        amount:
+          type: number
+          format: double
+        operationType:
+          type: string
+          enum: [TRANSFER]
+
+    CardDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        maskedNumber:
+          type: string
+        ownerName:
+          type: string
+        validUntil:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [ACTIVE, BLOCKED, EXPIRED]
+        balance:
+          type: number
+          format: double
+
+    CardDtoPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardDto'
+        totalElements:
+          type: integer
+        size:
+          type: integer
+        page:
+          type: integer
+
+
+    SessionInfoDto:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        userAgent:
+          type: string
+        ipAddress:
+          type: string
+        createdAt:
+          type: string
+          format: date-time

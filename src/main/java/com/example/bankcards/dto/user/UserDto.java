@@ -1,0 +1,18 @@
+package com.example.bankcards.dto.user;
+
+import com.example.bankcards.entity.user.Role;
+import com.example.bankcards.entity.user.User;
+
+public record UserDto(
+        Long id,
+        String username,
+        Role role
+) {
+    public static UserDto fromEntity(User user) {
+        return new UserDto(
+                user.getId(),
+                user.getUsername(),
+                user.getRole()
+        );
+    }
+}

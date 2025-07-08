@@ -1,0 +1,7 @@
+package com.example.bankcards.service.transfer;
+
+import java.math.BigDecimal;
+
+public interface TransferService {
+    void transfer(Long fromCardId, Long toCardId, BigDecimal amount, String username);
+}

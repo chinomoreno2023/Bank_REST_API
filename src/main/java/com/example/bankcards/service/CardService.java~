@@ -1,0 +1,83 @@
+package com.example.bankcards.service;
+
+import com.example.bankcards.dto.card.CardCreateRequest;
+import com.example.bankcards.dto.card.CardDto;
+import com.example.bankcards.entity.card.Card;
+import com.example.bankcards.entity.card.CardStatus;
+import com.example.bankcards.entity.user.User;
+import com.example.bankcards.repository.CardRepository;
+import com.example.bankcards.repository.UserRepository;
+import com.example.bankcards.util.CardMapper;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class CardService {
+    private final CardRepository cardRepository;
+    private final UserRepository userRepository;
+    private final CardMapper cardMapper;
+    private final CardEncryptor encryptor;
+    private final CardChecker cardChecker;
+
+    public CardDto create(CardCreateRequest request) {
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        String encryptedNumber = encryptor.encrypt(request.getNumber());
+
+        Card card = new Card();
+        card.setOwner(user);
+        card.setEncryptedNumber(encryptedNumber);
+        card.setExpirationDate(request.getValidUntil());
+        card.setStatus(CardStatus.ACTIVE);
+        card.setBalance(BigDecimal.ZERO);
+
+        return cardMapper.mapWithDecryption(cardRepository.save(card));
+    }
+
+    public List<CardDto> getAll() {
+        return cardRepository.findAll().stream()
+                .map(cardMapper::mapWithDecryption)
+                .toList();
+    }
+
+    public List<CardDto> getByUsername(String username) {
+        return cardRepository.findByUsername(username).stream()
+                .map(cardMapper::mapWithDecryption)
+                .toList();
+    }
+
+    public CardDto updateStatus(Long cardId, CardStatus status) {
+        Card card = cardChecker.getById(cardId);
+        card.setStatus(status);
+        return cardMapper.mapWithDecryption(cardRepository.save(card));
+    }
+
+    public Long delete(Long cardId) {
+        cardRepository.deleteById(cardId);
+        return cardId;
+    }
+
+    public BigDecimal getBalance(Long cardId, String username) {
+        Card card = cardChecker.getOwnedCardOrThrow(cardId, username);
+        return card.getBalance();
+    }
+
+    public Page<CardDto> getUserCards(String username, String numberFilter, Pageable pageable) {
+        Page<Card> page = cardRepository.findByUsernameWithFilter(username, numberFilter, pageable);
+        return page.map(cardMapper::mapWithDecryption);
+    }
+
+    public CardDto requestBlock(Long cardId, String username) {
+        Card card = cardChecker.getOwnedCardOrThrow(cardId, username);
+        card.setStatus(CardStatus.BLOCKED);
+        return cardMapper.mapWithDecryption(cardRepository.save(card));
+    }
+}
