@@ -694,6 +694,10 @@ paths:
                   value: { message: "You cannot transfer to the same card" }
                 operationType:
                   value: { message: "Operation type is required" }
+                cardFrom:
+                  value: { message: "From card ID is required" }
+                cardTo:
+                  value: { message: "To card ID is required" }
                 amount:
                   value: { message: "Amount is required" }
                 badFormat:

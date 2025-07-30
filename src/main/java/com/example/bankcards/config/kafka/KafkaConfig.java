@@ -7,9 +7,11 @@ import com.example.bankcards.exception.event.RetryableException;
 import com.example.bankcards.service.kafka.consumer.DLTHandler;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -86,6 +88,33 @@ public class KafkaConfig {
     @Value("${spring.kafka.producer.properties.interceptor.classes}")
     private String interceptorClasses;
 
+    @Value("${spring.kafka.properties.security.protocol}")
+    private String securityProtocol;
+
+    @Value("${spring.kafka.properties.ssl.endpoint.identification.algorithm}")
+    private String sslEndpointIdentificationAlgorithm;
+
+    @Value("${spring.kafka.properties.ssl.keystore.type}")
+    private String sslKeystoreType;
+
+    @Value("${spring.kafka.properties.ssl.truststore.type}")
+    private String sslTruststoreType;
+
+    @Value("${spring.kafka.properties.ssl.truststore.password}")
+    private String sslTruststorePassword;
+
+    @Value("${spring.kafka.properties.ssl.truststore.location}")
+    private String sslTruststoreLocation;
+
+    @Value("${spring.kafka.properties.ssl.keystore.location}")
+    private String sslKeystoreLocation;
+
+    @Value("${spring.kafka.properties.ssl.keystore.password}")
+    private String sslKeystorePassword;
+
+    @Value("${spring.kafka.properties.ssl.key.password}")
+    private String sslKeyPassword;
+
     @Bean
     ConsumerFactory<String, Event> consumerFactory() {
         Map<String, Object> config = new HashMap<>();
@@ -98,6 +127,15 @@ public class KafkaConfig {
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
         config.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, Event.class.getName());
+        config.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
+        config.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, sslEndpointIdentificationAlgorithm);
+        config.put(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, sslKeystoreType);
+        config.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, sslTruststoreType);
+        config.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, sslTruststorePassword);
+        config.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, sslTruststoreLocation);
+        config.put(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, sslKeystoreLocation);
+        config.put(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, sslKeystorePassword);
+        config.put(SslConfigs.SSL_KEY_PASSWORD_CONFIG, sslKeyPassword);
         return new DefaultKafkaConsumerFactory<>(config);
     }
 
@@ -161,6 +199,15 @@ public class KafkaConfig {
         props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, inflightRequests);
         props.put(ProducerConfig.TRANSACTIONAL_ID_CONFIG, transactionalIdPrefix);
         props.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, interceptorClasses);
+        props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
+        props.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, sslEndpointIdentificationAlgorithm);
+        props.put(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, sslKeystoreType);
+        props.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, sslTruststoreType);
+        props.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, sslTruststorePassword);
+        props.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, sslTruststoreLocation);
+        props.put(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, sslKeystoreLocation);
+        props.put(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, sslKeystorePassword);
+        props.put(SslConfigs.SSL_KEY_PASSWORD_CONFIG, sslKeyPassword);
         return props;
     }
 

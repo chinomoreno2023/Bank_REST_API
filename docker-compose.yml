@@ -10,6 +10,10 @@ volumes:
   redis_data_5:
   redis_data_6:
 
+networks:
+  app-network:
+    driver: bridge
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -23,66 +27,107 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
 
   kafka-1:
-    image: bitnami/kafka:latest
+    image: bitnami/kafka:3.7
     ports:
-     - "${KAFKA_1_PORT}:9092"
+    - "${KAFKA_1_PORT}:9092"
     restart: always
     environment:
       - KAFKA_CFG_NODE_ID=1
       - KAFKA_KRAFT_CLUSTER_ID=${KAFKA_CLUSTER_ID}
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9091,2@kafka-2:9091,3@kafka-3:9091
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9090,CONTROLLER://:9091,EXTERNAL://:9092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka-1:9090,EXTERNAL://${HOSTNAME:-localhost}:9092
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CONTROLLER://:9091,SSL://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=SSL://kafka-1:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:SSL,SSL:SSL
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=SSL
+      - KAFKA_CFG_SSL_CLIENT_AUTH=required
+      - KAFKA_CFG_SSL_KEYSTORE_LOCATION=/opt/bitnami/kafka/config/certs/kafka.keystore.jks
+      - KAFKA_CFG_SSL_KEYSTORE_PASSWORD=${KAFKA_SSL_KEYSTORE_PASSWORD}
+      - KAFKA_CFG_SSL_KEY_PASSWORD=${KAFKA_SSL_KEY_PASSWORD}
+      - KAFKA_CFG_SSL_TRUSTSTORE_LOCATION=/opt/bitnami/kafka/config/certs/kafka.truststore.jks
+      - KAFKA_CFG_SSL_TRUSTSTORE_PASSWORD=${KAFKA_SSL_TRUSTSTORE_PASSWORD}
+      - KAFKA_CFG_SSL_KEYSTORE_TYPE=JKS
+      - KAFKA_CFG_SSL_TRUSTSTORE_TYPE=JKS
+      - KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=${KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM}
     volumes:
       - kafka1:/bitnami/kafka
+      - ./kafka-ssl/kafka-1.keystore.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks
+      - ./kafka-ssl/kafka.truststore.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks
+    networks:
+      - app-network
 
   kafka-2:
-    image: bitnami/kafka:latest
+    image: bitnami/kafka:3.7
     ports:
-     - "${KAFKA_2_PORT}:9094"
+      - "${KAFKA_2_PORT}:9092"
     restart: always
     environment:
       - KAFKA_CFG_NODE_ID=2
       - KAFKA_KRAFT_CLUSTER_ID=${KAFKA_CLUSTER_ID}
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9091,2@kafka-2:9091,3@kafka-3:9091
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9090,CONTROLLER://:9091,EXTERNAL://:9094
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka-2:9090,EXTERNAL://${HOSTNAME:-localhost}:9094
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CONTROLLER://:9091,SSL://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=SSL://kafka-2:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:SSL,SSL:SSL
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=SSL
+      - KAFKA_CFG_SSL_CLIENT_AUTH=required
+      - KAFKA_CFG_SSL_KEYSTORE_LOCATION=/opt/bitnami/kafka/config/certs/kafka.keystore.jks
+      - KAFKA_CFG_SSL_KEYSTORE_PASSWORD=${KAFKA_SSL_KEYSTORE_PASSWORD}
+      - KAFKA_CFG_SSL_KEY_PASSWORD=${KAFKA_SSL_KEY_PASSWORD}
+      - KAFKA_CFG_SSL_TRUSTSTORE_LOCATION=/opt/bitnami/kafka/config/certs/kafka.truststore.jks
+      - KAFKA_CFG_SSL_TRUSTSTORE_PASSWORD=${KAFKA_SSL_TRUSTSTORE_PASSWORD}
+      - KAFKA_CFG_SSL_KEYSTORE_TYPE=JKS
+      - KAFKA_CFG_SSL_TRUSTSTORE_TYPE=JKS
+      - KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=${KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM}
     volumes:
       - kafka2:/bitnami/kafka
+      - ./kafka-ssl/kafka-2.keystore.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks
+      - ./kafka-ssl/kafka.truststore.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks
+    networks:
+      - app-network
 
   kafka-3:
-    image: bitnami/kafka:latest
+    image: bitnami/kafka:3.7
     ports:
-     - "${KAFKA_3_PORT}:9096"
+      - "${KAFKA_3_PORT}:9092"
     restart: always
     environment:
       - KAFKA_CFG_NODE_ID=3
       - KAFKA_KRAFT_CLUSTER_ID=${KAFKA_CLUSTER_ID}
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9091,2@kafka-2:9091,3@kafka-3:9091
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9090,CONTROLLER://:9091,EXTERNAL://:9096
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka-3:9090,EXTERNAL://${HOSTNAME:-localhost}:9096
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CONTROLLER://:9091,SSL://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=SSL://kafka-3:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:SSL,SSL:SSL
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=SSL
+      - KAFKA_CFG_SSL_CLIENT_AUTH=required
+      - KAFKA_CFG_SSL_KEYSTORE_LOCATION=/opt/bitnami/kafka/config/certs/kafka.keystore.jks
+      - KAFKA_CFG_SSL_KEYSTORE_PASSWORD=${KAFKA_SSL_KEYSTORE_PASSWORD}
+      - KAFKA_CFG_SSL_KEY_PASSWORD=${KAFKA_SSL_KEY_PASSWORD}
+      - KAFKA_CFG_SSL_TRUSTSTORE_LOCATION=/opt/bitnami/kafka/config/certs/kafka.truststore.jks
+      - KAFKA_CFG_SSL_TRUSTSTORE_PASSWORD=${KAFKA_SSL_TRUSTSTORE_PASSWORD}
+      - KAFKA_CFG_SSL_KEYSTORE_TYPE=JKS
+      - KAFKA_CFG_SSL_TRUSTSTORE_TYPE=JKS
+      - KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=${KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM}
     volumes:
       - kafka3:/bitnami/kafka
+      - ./kafka-ssl/kafka-3.keystore.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks
+      - ./kafka-ssl/kafka.truststore.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks
+    networks:
+      - app-network
 
   redis-node-1:
     image: redis:7.2-alpine
     container_name: redis-node-1
     ports:
-      - "7001:7001"
+      - "${REDIS_NODE_1_PORT}:7001"
       - "17001:17001"
     volumes:
       - redis_data_1:/data
@@ -91,19 +136,24 @@ services:
       --port 7001
       --cluster-enabled yes
       --cluster-config-file nodes.conf
-      --cluster-node-timeout 5000
+      --cluster-node-timeout 10000
       --appendonly yes
       --requirepass ${REDIS_PASSWORD}
       --masterauth ${REDIS_PASSWORD}
+      --cluster-announce-hostname redis-node-1
+      --cluster-announce-port 7001
+      --cluster-announce-bus-port 17001
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+    networks:
+      - app-network
     restart: always
 
   redis-node-2:
     image: redis:7.2-alpine
     container_name: redis-node-2
     ports:
-      - "7002:7002"
+      - "${REDIS_NODE_2_PORT}:7002"
       - "17002:17002"
     volumes:
       - redis_data_2:/data
@@ -112,19 +162,24 @@ services:
       --port 7002
       --cluster-enabled yes
       --cluster-config-file nodes.conf
-      --cluster-node-timeout 5000
+      --cluster-node-timeout 10000
       --appendonly yes
       --requirepass ${REDIS_PASSWORD}
       --masterauth ${REDIS_PASSWORD}
+      --cluster-announce-hostname redis-node-2
+      --cluster-announce-port 7002
+      --cluster-announce-bus-port 17002
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+    networks:
+      - app-network
     restart: always
 
   redis-node-3:
     image: redis:7.2-alpine
     container_name: redis-node-3
     ports:
-      - "7003:7003"
+      - "${REDIS_NODE_3_PORT}:7003"
       - "17003:17003"
     volumes:
       - redis_data_3:/data
@@ -133,19 +188,24 @@ services:
       --port 7003
       --cluster-enabled yes
       --cluster-config-file nodes.conf
-      --cluster-node-timeout 5000
+      --cluster-node-timeout 10000
       --appendonly yes
       --requirepass ${REDIS_PASSWORD}
       --masterauth ${REDIS_PASSWORD}
+      --cluster-announce-hostname redis-node-3
+      --cluster-announce-port 7003
+      --cluster-announce-bus-port 17003
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+    networks:
+      - app-network
     restart: always
 
   redis-node-4:
     image: redis:7.2-alpine
     container_name: redis-node-4
     ports:
-      - "7004:7004"
+      - "${REDIS_NODE_4_PORT}:7004"
       - "17004:17004"
     volumes:
       - redis_data_4:/data
@@ -158,15 +218,20 @@ services:
       --appendonly yes
       --requirepass ${REDIS_PASSWORD}
       --masterauth ${REDIS_PASSWORD}
+      --cluster-announce-hostname redis-node-4
+      --cluster-announce-port 7004
+      --cluster-announce-bus-port 17004
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+    networks:
+      - app-network
     restart: always
 
   redis-node-5:
     image: redis:7.2-alpine
     container_name: redis-node-5
     ports:
-      - "7005:7005"
+      - "${REDIS_NODE_5_PORT}:7005"
       - "17005:17005"
     volumes:
       - redis_data_5:/data
@@ -179,15 +244,20 @@ services:
       --appendonly yes
       --requirepass ${REDIS_PASSWORD}
       --masterauth ${REDIS_PASSWORD}
+      --cluster-announce-hostname redis-node-5
+      --cluster-announce-port 7005
+      --cluster-announce-bus-port 17005
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+    networks:
+      - app-network
     restart: always
 
   redis-node-6:
     image: redis:7.2-alpine
     container_name: redis-node-6
     ports:
-      - "7006:7006"
+      - "${REDIS_NODE_6_PORT}:7006"
       - "17006:17006"
     volumes:
       - redis_data_6:/data
@@ -200,12 +270,18 @@ services:
       --appendonly yes
       --requirepass ${REDIS_PASSWORD}
       --masterauth ${REDIS_PASSWORD}
+      --cluster-announce-hostname redis-node-6
+      --cluster-announce-port 7006
+      --cluster-announce-bus-port 17006
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+    networks:
+      - app-network
     restart: always
 
   redis-cluster-creator:
     image: redis:7.2-alpine
+    profiles: ["setup"]
     depends_on:
       - redis-node-1
       - redis-node-2
@@ -215,8 +291,10 @@ services:
       - redis-node-6
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+    networks:
+      - app-network
     command: >
-      sh -c "sleep 10 && redis-cli -a ${REDIS_PASSWORD} --cluster create redis-node-1:7001 redis-node-2:7002 redis-node-3:7003 redis-node-4:7004 redis-node-5:7005 redis-node-6:7006 --cluster-replicas 1 --cluster-yes"
+      sh -c "sleep 10 && redis-cli -a ${REDIS_PASSWORD} --cluster create redis-node-1:${REDIS_NODE_1_PORT} redis-node-2:${REDIS_NODE_2_PORT} redis-node-3:${REDIS_NODE_3_PORT} redis-node-4:${REDIS_NODE_4_PORT} redis-node-5:${REDIS_NODE_5_PORT} redis-node-6:${REDIS_NODE_6_PORT} --cluster-replicas 1 --cluster-yes"
 
   app:
     build: .
@@ -234,12 +312,11 @@ services:
       - redis-node-4
       - redis-node-5
       - redis-node-6
-      - redis-cluster-creator
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka-1:9090,kafka-2:9090,kafka-3:9090
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
       SPRING_CONFIG_LOCATION: classpath:/,file:/app/config/
       ENCRYPTION_KEYSTORE_PASSWORD: ${ENCRYPTION_KEYSTORE_PASSWORD}
       JWT_KEY_ALIAS: ${JWT_KEY_ALIAS}
@@ -250,9 +327,41 @@ services:
       ENCRYPTION_PEPPER: ${ENCRYPTION_PEPPER}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       SSL_PASSWORD: ${SSL_PASSWORD}
+      SPRING_KAFKA_PROPERTIES_SSL_KEYSTORE_TYPE: JKS
+      SPRING_KAFKA_PROPERTIES_SSL_TRUSTSTORE_TYPE: JKS
+      SPRING_KAFKA_PROPERTIES_SSL_KEYSTORE_PASSWORD: ${KAFKA_SSL_KEYSTORE_PASSWORD}
+      SPRING_KAFKA_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: ${KAFKA_SSL_TRUSTSTORE_PASSWORD}
+      SPRING_KAFKA_PROPERTIES_SSL_KEY_PASSWORD: ${KAFKA_SSL_KEY_PASSWORD}
+      SPRING_KAFKA_PROPERTIES_SSL_TRUSTSTORE_LOCATION: /app/config/kafka.truststore.jks
+      SPRING_KAFKA_PROPERTIES_SSL_KEYSTORE_LOCATION: /app/config/kafka.keystore.jks
+      SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SSL
+      SPRING_KAFKA_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ${SPRING_KAFKA_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM}
+      SPRING_KAFKA_PROPERTIES_SSL_KEY_ALIAS: ${KAFKA_SSL_KEY_ALIAS}
+      KAFKA_1_PORT: ${KAFKA_1_PORT}
+      KAFKA_2_PORT: ${KAFKA_2_PORT}
+      KAFKA_3_PORT: ${KAFKA_3_PORT}
+      SPRING_KAFKA_CONSUMER_GROUP_ID: ${SPRING_KAFKA_CONSUMER_GROUP_ID}
+      REDIS_NODE_1_PORT: ${REDIS_NODE_1_PORT}
+      REDIS_NODE_2_PORT: ${REDIS_NODE_2_PORT}
+      REDIS_NODE_3_PORT: ${REDIS_NODE_3_PORT}
+      REDIS_NODE_4_PORT: ${REDIS_NODE_4_PORT}
+      REDIS_NODE_5_PORT: ${REDIS_NODE_5_PORT}
+      REDIS_NODE_6_PORT: ${REDIS_NODE_6_PORT}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS}
+      APP_CORS_DEV_ORIGINS: ${APP_CORS_DEV_ORIGINS}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      FIRST_CARD_NUMBER: ${FIRST_CARD_NUMBER}
+      SECOND_CARD_NUMBER: ${SECOND_CARD_NUMBER}
+      INITIAL_CARDS_EXPIRATION: ${INITIAL_CARDS_EXPIRATION}
     volumes:
       - ./config/application.properties:/app/config/application.properties
       - ./config/app-secrets.p12:/app/config/app-secrets.p12
+      - ./kafka-ssl/kafka.truststore.jks:/app/config/kafka.truststore.jks
+      - ./kafka-ssl/bank-api-client.keystore.jks:/app/config/kafka.keystore.jks
+      - ./logs:/app/logs
+    networks:
+      - app-network
     command: >
       sh -c "
         echo '⌛ Waiting for Kafka and Postgres...';

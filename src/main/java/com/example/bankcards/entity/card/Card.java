@@ -18,6 +18,7 @@ public class Card {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String encryptedNumber;
     private LocalDate expirationDate;
     private BigDecimal balance;

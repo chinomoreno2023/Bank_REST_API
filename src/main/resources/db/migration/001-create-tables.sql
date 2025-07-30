@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS cards (
     version BIGINT NOT NULL DEFAULT 0
 );
 
+CREATE INDEX IF NOT EXISTS idx_card_owner_last_four
+    ON cards (owner_id, last_four_digits);
+
 CREATE TABLE IF NOT EXISTS transactions (
     id BIGSERIAL PRIMARY KEY,
     from_card_id INTEGER REFERENCES cards(id) ON DELETE SET NULL,

@@ -23,6 +23,7 @@ com\example\bankcards\controller\card\UserCardController.class
 com\example\bankcards\exception\GeneralExceptionHandler.class
 com\example\bankcards\service\user\UserServiceImpl.class
 com\example\bankcards\config\kafka\KafkaConfig.class
+com\example\bankcards\util\auth\AdminInitializer.class
 com\example\bankcards\util\exception\ExceptionResponseManager.class
 com\example\bankcards\service\auth\UserSessionService.class
 com\example\bankcards\dto\event\Event$EventBuilder.class
@@ -72,6 +73,7 @@ com\example\bankcards\exception\security\SecurityExceptionHandler.class
 com\example\bankcards\service\cache\RedisCacheServiceImpl$1.class
 com\example\bankcards\exception\event\RetryableException.class
 com\example\bankcards\exception\validation\CardAlreadyExistsException.class
+com\example\bankcards\config\security\AdminProperties.class
 com\example\bankcards\config\security\EncryptionProperties.class
 com\example\bankcards\dto\perform\PerformRequest$PerformRequestBuilder.class
 com\example\bankcards\dto\card\CardDto.class

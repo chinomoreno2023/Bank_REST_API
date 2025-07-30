@@ -11,7 +11,7 @@ import com.example.bankcards.exception.validation.CardAlreadyExistsException;
 import com.example.bankcards.repository.card.CardRepository;
 import com.example.bankcards.repository.user.UserRepository;
 import com.example.bankcards.security.SaltByteLength;
-import com.example.bankcards.service.cache.RedisCacheServiceImpl;
+import com.example.bankcards.service.cache.RedisCacheService;
 import com.example.bankcards.util.card.CardMapper;
 import com.example.bankcards.util.security.SymmetricEncryptor;
 import jakarta.persistence.EntityNotFoundException;
@@ -36,7 +36,7 @@ public class AdminCardServiceImpl implements AdminCardService {
     private final SymmetricEncryptor symmetricEncryptor;
     private final CardMapper cardMapper;
     private final EncryptionProperties encryptionProperties;
-    private final RedisCacheServiceImpl redisCacheEvictionService;
+    private final RedisCacheService redisCacheEvictionService;
 
     @Override
     @Transactional
@@ -58,7 +58,7 @@ public class AdminCardServiceImpl implements AdminCardService {
         card.setEncryptedNumber(encryptedNumber);
         card.setExpirationDate(request.getValidUntil());
         card.setStatus(CardStatus.ACTIVE);
-        card.setBalance(BigDecimal.ZERO);
+        card.setBalance(BigDecimal.valueOf(1000));
         card.setCardHash(hash);
         card.setCardSalt(salt);
         card.setCardNumberSearchHash(searchHash);

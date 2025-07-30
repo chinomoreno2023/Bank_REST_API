@@ -1,6 +1,7 @@
 package com.example.bankcards.service.perform.transfer;
 
 import com.example.bankcards.dto.perform.transfer.TransferRequest;
+import com.example.bankcards.service.cache.RedisCacheService;
 import com.example.bankcards.service.perform.PerformService;
 import com.example.bankcards.service.perform.processor.Processor;
 import com.example.bankcards.util.auth.ContextExtractor;
@@ -13,10 +14,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class TransferPerformServiceImpl implements PerformService<TransferRequest> {
     private final Processor processor;
     private final ContextExtractor contextExtractor;
+    private final RedisCacheService redisCacheEvictionService;
 
     @Transactional
     public void perform(TransferRequest transferRequest) {
         String username = contextExtractor.getUsernameFromContext();
         processor.process(transferRequest, username);
+
+        Long currentUserId = contextExtractor.getUserFromContext().getId();
+        redisCacheEvictionService.evictUserCardsCache(currentUserId);
+        redisCacheEvictionService.evictAdminCardsCache();
     }
 }
