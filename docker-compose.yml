@@ -33,7 +33,7 @@ services:
   kafka-1:
     image: bitnami/kafka:3.7
     ports:
-    - "${KAFKA_1_PORT}:9092"
+      - "${KAFKA_1_PORT}:9092"
     restart: always
     environment:
       - KAFKA_CFG_NODE_ID=1
@@ -56,8 +56,8 @@ services:
       - KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=${KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM}
     volumes:
       - kafka1:/bitnami/kafka
-      - ./kafka-ssl/kafka-1.keystore.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks
-      - ./kafka-ssl/kafka.truststore.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks
+      - ./ssl/kafka-1.keystore.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks
+      - ./ssl/kafka.truststore.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks
     networks:
       - app-network
 
@@ -87,8 +87,8 @@ services:
       - KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=${KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM}
     volumes:
       - kafka2:/bitnami/kafka
-      - ./kafka-ssl/kafka-2.keystore.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks
-      - ./kafka-ssl/kafka.truststore.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks
+      - ./ssl/kafka-2.keystore.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks
+      - ./ssl/kafka.truststore.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks
     networks:
       - app-network
 
@@ -118,8 +118,8 @@ services:
       - KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=${KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM}
     volumes:
       - kafka3:/bitnami/kafka
-      - ./kafka-ssl/kafka-3.keystore.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks
-      - ./kafka-ssl/kafka.truststore.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks
+      - ./ssl/kafka-3.keystore.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks
+      - ./ssl/kafka.truststore.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks
     networks:
       - app-network
 
@@ -131,12 +131,22 @@ services:
       - "17001:17001"
     volumes:
       - redis_data_1:/data
+      - ./ssl/redis-node-1.crt.pem:/certs/redis.crt
+      - ./ssl/redis-node-1.key.pem:/certs/redis.key
+      - ./ssl/ca-cert.pem:/certs/ca.crt
     command: >
       redis-server
-      --port 7001
+      --port 0 
+      --tls-port 7001
+      --tls-cert-file /certs/redis.crt
+      --tls-key-file /certs/redis.key
+      --tls-ca-cert-file /certs/ca.crt
+      --tls-cluster yes
+      --tls-replication yes
+      --tls-auth-clients yes
       --cluster-enabled yes
       --cluster-config-file nodes.conf
-      --cluster-node-timeout 10000
+      --cluster-node-timeout 5000
       --appendonly yes
       --requirepass ${REDIS_PASSWORD}
       --masterauth ${REDIS_PASSWORD}
@@ -157,12 +167,22 @@ services:
       - "17002:17002"
     volumes:
       - redis_data_2:/data
+      - ./ssl/redis-node-2.crt.pem:/certs/redis.crt
+      - ./ssl/redis-node-2.key.pem:/certs/redis.key
+      - ./ssl/ca-cert.pem:/certs/ca.crt
     command: >
       redis-server
-      --port 7002
+      --port 0
+      --tls-port 7002
+      --tls-cert-file /certs/redis.crt
+      --tls-key-file /certs/redis.key
+      --tls-ca-cert-file /certs/ca.crt
+      --tls-cluster yes
+      --tls-replication yes
+      --tls-auth-clients yes
       --cluster-enabled yes
       --cluster-config-file nodes.conf
-      --cluster-node-timeout 10000
+      --cluster-node-timeout 5000
       --appendonly yes
       --requirepass ${REDIS_PASSWORD}
       --masterauth ${REDIS_PASSWORD}
@@ -183,12 +203,22 @@ services:
       - "17003:17003"
     volumes:
       - redis_data_3:/data
+      - ./ssl/redis-node-3.crt.pem:/certs/redis.crt
+      - ./ssl/redis-node-3.key.pem:/certs/redis.key
+      - ./ssl/ca-cert.pem:/certs/ca.crt
     command: >
       redis-server
-      --port 7003
+      --port 0
+      --tls-port 7003
+      --tls-cert-file /certs/redis.crt
+      --tls-key-file /certs/redis.key
+      --tls-ca-cert-file /certs/ca.crt
+      --tls-cluster yes
+      --tls-replication yes
+      --tls-auth-clients yes
       --cluster-enabled yes
       --cluster-config-file nodes.conf
-      --cluster-node-timeout 10000
+      --cluster-node-timeout 5000
       --appendonly yes
       --requirepass ${REDIS_PASSWORD}
       --masterauth ${REDIS_PASSWORD}
@@ -209,9 +239,19 @@ services:
       - "17004:17004"
     volumes:
       - redis_data_4:/data
+      - ./ssl/redis-node-4.crt.pem:/certs/redis.crt
+      - ./ssl/redis-node-4.key.pem:/certs/redis.key
+      - ./ssl/ca-cert.pem:/certs/ca.crt
     command: >
       redis-server
-      --port 7004
+      --port 0
+      --tls-port 7004
+      --tls-cert-file /certs/redis.crt
+      --tls-key-file /certs/redis.key
+      --tls-ca-cert-file /certs/ca.crt
+      --tls-cluster yes
+      --tls-replication yes
+      --tls-auth-clients yes
       --cluster-enabled yes
       --cluster-config-file nodes.conf
       --cluster-node-timeout 5000
@@ -235,9 +275,19 @@ services:
       - "17005:17005"
     volumes:
       - redis_data_5:/data
+      - ./ssl/redis-node-5.crt.pem:/certs/redis.crt
+      - ./ssl/redis-node-5.key.pem:/certs/redis.key
+      - ./ssl/ca-cert.pem:/certs/ca.crt
     command: >
       redis-server
-      --port 7005
+      --port 0
+      --tls-port 7005
+      --tls-cert-file /certs/redis.crt
+      --tls-key-file /certs/redis.key
+      --tls-ca-cert-file /certs/ca.crt
+      --tls-cluster yes
+      --tls-replication yes
+      --tls-auth-clients yes
       --cluster-enabled yes
       --cluster-config-file nodes.conf
       --cluster-node-timeout 5000
@@ -261,9 +311,19 @@ services:
       - "17006:17006"
     volumes:
       - redis_data_6:/data
+      - ./ssl/redis-node-6.crt.pem:/certs/redis.crt
+      - ./ssl/redis-node-6.key.pem:/certs/redis.key
+      - ./ssl/ca-cert.pem:/certs/ca.crt
     command: >
       redis-server
-      --port 7006
+      --port 0
+      --tls-port 7006
+      --tls-cert-file /certs/redis.crt
+      --tls-key-file /certs/redis.key
+      --tls-ca-cert-file /certs/ca.crt
+      --tls-cluster yes
+      --tls-replication yes
+      --tls-auth-clients yes
       --cluster-enabled yes
       --cluster-config-file nodes.conf
       --cluster-node-timeout 5000
@@ -281,6 +341,10 @@ services:
 
   redis-cluster-creator:
     image: redis:7.2-alpine
+    volumes:
+      - ./ssl/bank-api-redis-client.crt.pem:/certs/client.crt
+      - ./ssl/bank-api-redis-client.key.pem:/certs/client.key
+      - ./ssl/ca-cert.pem:/certs/ca.crt
     profiles: ["setup"]
     depends_on:
       - redis-node-1
@@ -294,7 +358,7 @@ services:
     networks:
       - app-network
     command: >
-      sh -c "sleep 10 && redis-cli -a ${REDIS_PASSWORD} --cluster create redis-node-1:${REDIS_NODE_1_PORT} redis-node-2:${REDIS_NODE_2_PORT} redis-node-3:${REDIS_NODE_3_PORT} redis-node-4:${REDIS_NODE_4_PORT} redis-node-5:${REDIS_NODE_5_PORT} redis-node-6:${REDIS_NODE_6_PORT} --cluster-replicas 1 --cluster-yes"
+      sh -c "sleep 10 && redis-cli -a ${REDIS_PASSWORD} --cluster create redis-node-1:${REDIS_NODE_1_PORT} redis-node-2:${REDIS_NODE_2_PORT} redis-node-3:${REDIS_NODE_3_PORT} redis-node-4:${REDIS_NODE_4_PORT} redis-node-5:${REDIS_NODE_5_PORT} redis-node-6:${REDIS_NODE_6_PORT} --cluster-replicas 1 --cluster-yes --tls --cert /certs/client.crt --key /certs/client.key --cacert /certs/ca.crt"
 
   app:
     build: .
@@ -357,9 +421,12 @@ services:
     volumes:
       - ./config/application.properties:/app/config/application.properties
       - ./config/app-secrets.p12:/app/config/app-secrets.p12
-      - ./kafka-ssl/kafka.truststore.jks:/app/config/kafka.truststore.jks
-      - ./kafka-ssl/bank-api-client.keystore.jks:/app/config/kafka.keystore.jks
+      - ./ssl/kafka.truststore.jks:/app/config/kafka.truststore.jks
+      - ./ssl/bank-api-client.keystore.jks:/app/config/kafka.keystore.jks
       - ./logs:/app/logs
+      - ./ssl/ca-cert.pem:/app/config/redis_ca.crt
+      - ./ssl/bank-api-redis-client.crt.pem:/app/config/redis_client.crt
+      - ./ssl/bank-api-redis-client.key.pem:/app/config/redis_client.key
     networks:
       - app-network
     command: >
